@@ -17,3 +17,15 @@ keywords:
 ---
 
 
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+rm (list = ls (all = TRUE))
+
+
+
+
+
+
+
+```
