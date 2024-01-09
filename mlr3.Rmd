@@ -22,15 +22,67 @@ keywords:
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 rm (list = ls (all = TRUE))
 
+library(mlr3)
+
+
+options(mlr3.allow_utf8_names = TRUE)    # 允许设置UTF-8的列名
+
+
+task <-  tsk("penguins")      # tsk 是mlr3中用于创建任务的函数。
+split = partition(task)       # 任务分割成训练集和测试集。partition是mlr3中的函数，用于划分数据集。
+learner = lrn("classif.rpart")  #  创建一个基于CART（分类和回归树）算法的学习器对象。lrn 是mlr3中用于创建学习器的函数，参数指定了学习器的类型；
+# classif: 表示这是一个分类任务；
+# rpart: 表示使用 rpart 包中的算法。
+
+learner$train(task, row_ids = split$train)   # 使用创建的学习器对训练集进行训练
+learner$model                                # 显示训练后的模型
 
 
 
+prediction = learner$predict(task, row_ids = split$test)  # 对测试集进行预测
+prediction                                                # 显示预测结果
 
+
+prediction$score(msr("classif.acc"))                      # 计算分类准确率
+
+
+
+# $xx，这里的xx都是指mlr3里的函数
 
 
 ```
 
 
 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+
+library(mlr3verse)
+
+tasks = tsks(c("breast_cancer", "sonar"))
+
+glrn_rf_tuned = as_learner(ppl("robustify") %>>% auto_tuner(
+    tnr("grid_search", resolution = 5),
+    lrn("classif.ranger", num.trees = to_tune(200, 500)),
+    rsmp("holdout")
+))
+glrn_rf_tuned$id = "RF"
+
+glrn_stack = as_learner(ppl("robustify") %>>% ppl("stacking",
+    lrns(c("classif.rpart", "classif.kknn")),
+    lrn("classif.log_reg")
+))
+glrn_stack$id = "Stack"
+
+learners = c(glrn_rf_tuned, glrn_stack)
+bmr = benchmark(benchmark_grid(tasks, learners, rsmp("cv", folds = 3)))
+
+bmr$aggregate(msr("classif.acc"))
+
+
+
+
+```
 
 
